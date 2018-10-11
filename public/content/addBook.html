@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>addBook</title>
+    <style>
+        table {
+            width: 1000px;
+            margin: 0 auto;
+            border: 1px solid #e0e0e0;
+            border-collapse: collapse;
+            text-align: center;
+        }
+        tr td {
+            height: 60px;
+            border: 1px solid #e0e0e0;
+        }
+        .add-box {
+            width: 1000px;
+            margin: 10px auto;
+        }
+        .info {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="info">
+    <p>
+        登录账户：
+        <span id="account"></span>
+    </p>
+    <button id="reset">返回登录</button>
+</div>
+<table>
+    <thead>
+        <tr>
+            <th>书名</th>
+            <th>作者</th>
+            <th>价格</th>
+            <th>总数量</th>
+            <th>可借数量</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody id="book-body">
+
+    </tbody>
+</table>
+<div class="add-box">
+    书名：<input type="text" id="bName" placeholder="请输入书名">
+    <br>
+    作者：<input type="text" id="bAuthor" placeholder="请输入作者">
+    <br>
+    价格：<input type="text" id="bPrice" placeholder="请输入价格">
+    <br>
+    数量：<input type="text" id="bNum" placeholder="请输入数量">
+    <br>
+    <button type="button" id="add">添加书籍</button>
+</div>
+<script src="../lib/jquery-3.1.1.js"></script>
+<script>
+    var books = [];
+
+    var account = localStorage.getItem('account');
+    $('#account').html(account);
+    $('#reset').on('click', function() {
+        location.href = '../index.html';
+    });
+
+    getBook();
+    function getBook() {
+        $.ajax({
+            type: 'get',
+            url: 'http://10.50.50.11:3333/book/getAll',
+            success: function (data) {
+                console.log(data);
+                if(data.code === '0') {
+                    var str = '';
+                    books = data.data;
+                    if(data.data && data.data.length) {
+                        for(var i in data.data) {
+                            var temp = data.data[i];
+                            str += '<tr>';
+                            str += '<td class="book-name">' + temp.name + '</td>';
+                            str += '<td>' + temp.author + '</td>';
+                            str += '<td>' + temp.price + '</td>';
+                            str += '<td>' + temp.num + '</td>';
+                            str += '<td>' + temp.canBorrowNum + '</td>';
+                            str += '<td class="remove-book">删除</td>';
+                            str += '</tr>';
+                        }
+                        $('#book-body').html(str);
+                        str = '';
+                        setTimeout(function() {
+                            initRemove();
+                        }, 100);
+                    }
+                } else {
+                    alert(data.msg);
+                }
+            },
+            error: function (err) {
+                console.log('err');
+                console.log(err)
+            }
+        })
+    }
+
+
+    $('#add').on('click', function() {
+        var book = {
+            name: $('#bName').val(),
+            author: $('#bAuthor').val(),
+            num: $('#bNum').val(),
+            price: $('#bPrice').val()
+        };
+        if(!book.name || !book.author || !book.price || !book.num) {
+            alert('信息都没填完- -');
+            return false;
+        }
+        $.ajax({
+            type: 'post',
+            data: book,
+            url: 'http://10.50.50.11:3333/book/add',
+            success: function (data) {
+                if(data.code === '0') {
+                    $('#bName').val('');
+                    $('#bAuthor').val('');
+                    $('#bPrice').val('');
+                    $('#bNum').val('');
+                    getBook();
+//                    alert('添加成功');
+                } else {
+                    alert(data.msg);
+                }
+            },
+            error: function (err) {
+                console.log('err');
+                console.log(err)
+            }
+        })
+    });
+
+    function initRemove() {
+        var $remove = $('.remove-book');
+        $remove.off();
+        $.each($remove, function(index, n) {
+            $(this).on('click', function() {
+                var name = books[index]['name'];
+                $.ajax({
+                    type: 'post',
+                    data: {name: name},
+                    url: 'http://10.50.50.11:3333/book/remove',
+                    success: function (data) {
+                        if(data.code === '0') {
+                            getBook();
+                            alert('删除成功');
+                        } else {
+                            alert(data.msg);
+                        }
+                    },
+                    error: function (err) {
+                        console.log('err');
+                        console.log(err)
+                    }
+                })
+            })
+        });
+
+    }
+
+
+</script>
+</body>
+</html>

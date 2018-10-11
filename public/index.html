@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+</head>
+<body>
+<form>
+    <label>
+        账号：<input id="account" type="text" placeholder="请输入账号">
+    </label>
+    <br>
+    <label>
+        密码：<input id="pas" type="password">
+    </label>
+    <br>
+    <label>
+        用户<input type="radio" name="role" value="1">
+    </label>
+    <label>
+        管理员<input type="radio" name="role" value="2">
+    </label>
+    <br>
+    <button id="add" type="button">创建</button>
+    <button id="login" type="button">登录</button>
+</form>
+<script src="lib/jquery-3.1.1.js"></script>
+<script>
+    $('#add').on('click', function() {
+        var user = {
+            account: $('#account').val(),
+            pas: $('#pas').val(),
+            role: $('input[name="role"]:checked').val()
+        };
+        if(!user.account || !user.pas || !user.role) {
+            alert('信息都没填完- -');
+            return false;
+        }
+        $.ajax({
+            type: 'post',
+            data: user,
+            url: 'http://10.50.50.11:3333/login/add',
+            success: function (data) {
+                if(data.code === '0') {
+                    enterPage(user);
+                } else {
+                    alert(data.msg);
+                }
+            },
+            error: function (err) {
+                console.log('err');
+                console.log(err)
+            }
+        })
+    });
+    $('#login').on('click', function() {
+        var user = {
+            account: $('#account').val(),
+            pas: $('#pas').val(),
+            role: $('input[name="role"]:checked').val()
+        };
+        if(!user.account || !user.pas || !user.role) {
+            alert('信息都没填完- -');
+            return false;
+        }
+        $.ajax({
+            type: 'post',
+            data: user,
+            url: 'http://10.50.50.11:3333/login/in',
+            success: function (data) {
+                if(data.code === '0') {
+                    enterPage(user);
+                } else {
+                    alert(data.msg);
+                }
+            },
+            error: function (err) {
+                console.log('err');
+                console.log(err)
+            }
+        })
+    })
+
+    function enterPage(user) {
+        localStorage.setItem('account', user.account);
+        // 1 用户 2 管理
+        if(user.role == 1) {
+            window.location.href = './content/borrowBook.html';
+        } else {
+            window.location.href = './content/addBook.html';
+        }
+    }
+
+</script>
+</body>
+</html>

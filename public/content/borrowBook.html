@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        table {
+            margin: 0 auto;
+            border: 1px solid #e0e0e0;
+            border-collapse: collapse;
+            text-align: center;
+        }
+        tr td {
+            height: 60px;
+            border: 1px solid #e0e0e0;
+        }
+        .main {
+            display: flex;
+        }
+        .main-l {
+            width: 0;
+            flex: 1;
+            margin: 0 20px;
+        }
+        .main-r {
+            width: 0;
+            flex: 1;
+            margin: 0 20px;
+        }
+        .info {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="info">
+    <p>
+        登录账户：
+        <span id="account"></span>
+    </p>
+    <button id="reset">返回登录</button>
+</div>
+<div class="main">
+    <div class="main-l">
+        <table style="width: 100%;">
+            <thead>
+            <tr>
+                <th>书名</th>
+                <th>作者</th>
+                <th>价格</th>
+                <th>借用时间</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="borrow-book">
+
+            </tbody>
+        </table>
+    </div>
+    <div class="main-r">
+        <table style="width: 100%;">
+            <thead>
+            <tr>
+                <th>书名</th>
+                <th>作者</th>
+                <th>价格</th>
+                <th>总数量</th>
+                <th>可借数量</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="book-body">
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="../lib/jquery-3.1.1.js"></script>
+<script>
+    var books = [];
+    var account = localStorage.getItem('account');
+    $('#account').html(account);
+    $('#reset').on('click', function() {
+        location.href = '../index.html';
+    });
+
+    console.log(account);
+    getBook();
+    function getBook() {
+        $.ajax({
+            type: 'get',
+            url: 'http://10.50.50.11:3333/book/getAll',
+            success: function (data) {
+                console.log(data);
+                if(data.code === '0') {
+                    var str = '';
+                    books = data.data;
+                    if(data.data && data.data.length) {
+                        for(var i in data.data) {
+                            var temp = data.data[i];
+                            if(temp.canBorrowNum == 0) {
+                                continue;
+                            }
+                            str += '<tr>';
+                            str += '<td class="book-name">' + temp.name + '</td>';
+                            str += '<td>' + temp.author + '</td>';
+                            str += '<td>' + temp.price + '</td>';
+                            str += '<td>' + temp.num + '</td>';
+                            str += '<td>' + temp.canBorrowNum + '</td>';
+                            str += '<td class="remove-book">借用</td>';
+                            str += '</tr>';
+                        }
+                        $('#book-body').html(str);
+                        str = '';
+                        setTimeout(function() {
+                            initRemove();
+                        }, 100);
+                    } else {
+                        $('#book-body').html('');
+                    }
+                } else {
+                    alert(data.msg);
+                }
+            },
+            error: function (err) {
+                console.log('err');
+                console.log(err)
+            }
+        })
+    }
+
+    getBorrowBook();
+    var borrowBooks = [];
+    function getBorrowBook() {
+        $.ajax({
+            type: 'get',
+            data: {account: account},
+            url: 'http://10.50.50.11:3333/book/getBorrow',
+            success: function (data) {
+                console.log(data);
+                if(data.code === '0') {
+                    var str = '';
+                    borrowBooks = data.data;
+                    if(data.data && data.data.length) {
+                        for(var i in data.data) {
+                            var temp = data.data[i];
+                            str += '<tr>';
+                            str += '<td class="book-name">' + temp.name + '</td>';
+                            str += '<td>' + temp.author + '</td>';
+                            str += '<td>' + temp.price + '</td>';
+                            str += '<td>' + temp.borrowTime + '</td>';
+                            str += '<td class="borrow-book">归还</td>';
+                            str += '</tr>';
+                        }
+                        $('#borrow-book').html(str);
+                        str = '';
+                        setTimeout(function() {
+                            returnBook();
+                        }, 100);
+                    } else {
+                        $('#borrow-book').html('');
+                    }
+                } else {
+                    alert(data.msg);
+                }
+            },
+            error: function (err) {
+                console.log('err');
+                console.log(err)
+            }
+        })
+    }
+
+    function initRemove() {
+        var $remove = $('.remove-book');
+        $remove.off();
+        $.each($remove, function(index, n) {
+            $(this).on('click', function() {
+                var name = books[index]['name'];
+                console.log(books);
+                $.ajax({
+                    type: 'post',
+                    data: {name: name, account: account},
+                    url: 'http://10.50.50.11:3333/book/borrow',
+                    success: function (data) {
+                        if(data.code === '0') {
+                            getBook();
+                            getBorrowBook();
+                            alert('借用成功');
+                        } else {
+                            alert(data.msg);
+                        }
+                    },
+                    error: function (err) {
+                        console.log('err');
+                        console.log(err)
+                    }
+                })
+            })
+        });
+    }
+
+    function returnBook() {
+        var $remove = $('.borrow-book');
+        $remove.off();
+        $.each($remove, function(index, n) {
+            $(this).on('click', function() {
+                var name = borrowBooks[index]['name'];
+                $.ajax({
+                    type: 'post',
+                    data: {name: name, account: account},
+                    url: 'http://10.50.50.11:3333/book/returnBook',
+                    success: function (data) {
+                        if(data.code === '0') {
+                            getBook();
+                            getBorrowBook();
+                            alert('归还成功');
+                        } else {
+                            alert(data.msg);
+                        }
+                    },
+                    error: function (err) {
+                        console.log('err');
+                        console.log(err)
+                    }
+                })
+            })
+        });
+    }
+
+
+</script>
+</body>
+</html>
