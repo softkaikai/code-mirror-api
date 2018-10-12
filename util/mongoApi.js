@@ -21,5 +21,27 @@ module.exports = {
                 }
             })
         })
-    }
+    },
+    remove (collection, body) {
+        return new Promise((resolve, reject) => {
+            collection.remove(body, (err, result) => {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(result)
+                }
+            })
+        })
+    },
+    update (collection, search, body) {
+        return new Promise((resolve, reject) => {
+            collection.update(search, body, (err, result) => {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(result)
+                }
+            })
+        })
+    },
 };
